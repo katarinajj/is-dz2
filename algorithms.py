@@ -143,8 +143,11 @@ def is_consistent_assignment(var, value, graph):
                 return False
     return True
 
+def update_domain(new_dom, v, value, graph):
+    pass
 
-def backtrack_search(graph, moves_list, domains, level, fc, arc):
+
+def backtrack(graph, moves_list, domains, level, fc, arc):
     if level == graph.key_count:
         return True
     var = graph.get_next_unassigned()
@@ -170,11 +173,13 @@ def backtrack_search(graph, moves_list, domains, level, fc, arc):
             if arc:
                 print("ARC")
 
-            if backtrack_search(graph, moves_list, domains, level + 1, fc, arc):
+            if backtrack(graph, moves_list, domains, level + 1, fc, arc):
                 return True
 
+    # reset
     moves_list.append([var, None])
     unassign_var(graph, var, len_in_domain)
+    # reset domain
     return False
 
 class Backtracking(Algorithm):
@@ -188,7 +193,7 @@ class Backtracking(Algorithm):
 
         moves_list = []
         domains = {var: [word for word in words if len(word) == variables[var]] for var in variables}
-        backtrack_search(graph, moves_list, domains, 0, self.fc, self.arc)
+        backtrack(graph, moves_list, domains, 0, self.fc, self.arc)
 
         print("MOVES LIST: ")
         print(moves_list)
