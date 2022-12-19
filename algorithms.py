@@ -34,18 +34,13 @@ class Graph:
         self.n = len(tiles)
         self.m = len(tiles[0])
         self.graph = {}
-        self.assigned = {}
         self.key_count = len(variables)
         for key in variables:
             self.graph[key] = set()
-            self.assigned[key] = False
 
         self.form_constraints(tiles, variables)
         for key in variables:
             self.graph[key] = sorted(self.graph[key])
-
-        self.filled_tiles = [''] * (self.n * self.m)
-        self.form_filled_tiles(tiles)
 
     def get_adj_list(self, key):
         return self.graph[key]
@@ -84,117 +79,95 @@ class Graph:
     def print_graph(self):
         print(self.graph)
 
-    def get_next_unassigned(self):
-        for key in self.assigned:
-            if self.assigned[key] is False:
-                return key
-        return None
 
-    def assign_key(self, key):
-        self.assigned[key] = True
-
-    def unassign_key(self, key):
-        self.assigned[key] = False
-
-    def form_filled_tiles(self, tiles):
-        ind = 0
-        for i in range(0, self.n):
-            for j in range(0, self.m):
-                if tiles[i][j] is True:
-                    self.filled_tiles[ind] = '-'
-                ind += 1
+def get_next_unassigned(assignment):
+    for key in assignment:
+        if assignment[key] is None:
+            return key
+    return None
 
 
-def assign_var(graph, var, value):
-    graph.assign_key(var)
+def form_filled_tiles(tiles):
+    n = len(tiles)
+    m = len(tiles[0])
+    filled_tiles = [''] * (len(tiles) * len(tiles[0]))
+    ind = 0
+    for i in range(0, n):
+        for j in range(0, m):
+            if tiles[i][j] is True:
+                filled_tiles[ind] = '-'
+            ind += 1
+    return filled_tiles
+
+
+def assign_var(assignment, filled_tiles, var, value, m):
+    assignment[var] = value
     ind = int(var[0:-1])
     value_len = len(value)
     if var[-1] == 'h':
         for i in range(0, value_len):
-            graph.filled_tiles[ind + i] = value[i]
+            filled_tiles[ind + i] = value[i]
     else:
         for i in range(0, value_len):
-            graph.filled_tiles[ind + i * graph.m] = value[i]
+            filled_tiles[ind + i * m] = value[i]
 
 
-def unassign_var(graph, var, value_len):
-    if graph.assigned[var] is True:
-        graph.unassign_key(var)
-        ind = int(var[0:-1])
-        if var[-1] == 'h':
-            for i in range(0, value_len):
-                graph.filled_tiles[ind + i] = ''
-        else:
-            for i in range(0, value_len):
-                graph.filled_tiles[ind + i * graph.m] = ''
-    # if var == '4h':
-    #     print("BBBBBBBBBBBBBBBBBBBBBB " + var)
-    #     print(graph.filled_tiles)
-
-
-def is_consistent_assignment(var, value, graph):
+def is_consistent_assignment(var, value, filled_tiles, m):
     ind = int(var[0:-1])
     value_len = len(value)
     if var[-1] == 'h':
         for i in range(0, value_len):
-            field = graph.filled_tiles[ind + i]
+            field = filled_tiles[ind + i]
             if field != '' and field != value[i]:
                 return False
     else:
         for i in range(0, value_len):
-            field = graph.filled_tiles[ind + i * graph.m]
+            field = filled_tiles[ind + i * m]
             if field != '' and field != value[i]:
                 return False
     return True
 
-def not_constraining(var1, value1, var2, value2, graph):
+def not_constraining(var1, value1, var2, value2, filled_tiles, m):
     # var1 = value1 is newly added in filled_tiles, so
     # it is enough to check if var2 = value 2 would constrain with filled_tiles
-    return is_consistent_assignment(var2, value2, graph)
+    return is_consistent_assignment(var2, value2, filled_tiles, m)
 
-def update_domain(new_domains, value1, var1, var2, graph):
+def update_domain(new_domains, value1, var1, var2, filled_tiles, m):
     new_domains_var2 = []
     for value2 in new_domains[var2]:
-        if not_constraining(var1, value1, var2, value2, graph):
+        if not_constraining(var1, value1, var2, value2, filled_tiles, m):
             new_domains_var2.append(value2)
     new_domains[var2] = new_domains_var2
 
 
-def backtrack(graph, moves_list, domains, level, fc, arc):
+def backtrack(graph, moves_list, domains, level, assignment, filled_tiles, fc, arc):
     if level == graph.key_count:
         return True
-    var = graph.get_next_unassigned()
+    var = get_next_unassigned(assignment)
 
     values = domains[var]
     len_values = len(values)
-    len_in_domain = 0 if (len_values == 0) else len(values[0])
 
     for i in range(0, len_values):
         value = values[i]
-        if is_consistent_assignment(var, value, graph):
-            if not fc and not arc:
-                moves_list.append([var, i])
-                assign_var(graph, var, value)
-                if backtrack(graph, moves_list, domains, level + 1, fc, arc):
-                    return True
-                # moves_list.append([var, None])
-                unassign_var(graph, var, len_in_domain)
+        if is_consistent_assignment(var, value, filled_tiles, graph.m):
+            moves_list.append([var, i])
+            new_assignment = copy.deepcopy(assignment)
+            new_filled_tiles = copy.deepcopy(filled_tiles)
+            new_domains = copy.deepcopy(domains)
+            new_domains[var] = [value]
+
+            assign_var(new_assignment, new_filled_tiles, var, value, graph.m)
 
             if fc:
-                print("FC")
-                # moves_list.append([var, 0])
-                # assign_var(graph, var, value)
-                # new_domains = copy.deepcopy(domains)
-                # new_domains[var] = [value]
-                # # for v in graph.get_adj_list(var):
-                # #     if graph.assigned[v] is False:
-                # #         # update_domain(new_domains, value, var, v, graph)
-                # if backtrack(graph, moves_list, new_domains, level + 1, fc, arc):
-                #     return True
+                for v in graph.get_adj_list(var):
+                    if new_assignment[v] is None:
+                        update_domain(new_domains, value, var, v, filled_tiles, graph.m)
 
-    # reset
+            if backtrack(graph, moves_list, new_domains, level + 1, new_assignment, new_filled_tiles, fc, arc):
+                return True
+
     moves_list.append([var, None])
-    unassign_var(graph, var, len_in_domain)
     return False
 
 class Backtracking(Algorithm):
@@ -202,15 +175,17 @@ class Backtracking(Algorithm):
         self.fc = False
         self.arc = False
 
-    # da li u backtrackingu domen ostaje konstantno isti ili kad izvrsim dodelu onda azuriram
-
     def get_algorithm_steps(self, tiles, variables, words):
         graph = Graph(tiles, variables)
+        print("GRAPH: ")
         graph.print_graph()
 
+        assignment = {key: None for key in variables}
+        filled_tiles = form_filled_tiles(tiles)
         moves_list = []
         domains = {var: [word for word in words if len(word) == variables[var]] for var in variables}
-        backtrack(graph, moves_list, domains, 0, self.fc, self.arc)
+
+        backtrack(graph, moves_list, domains, 0, assignment, filled_tiles, self.fc, self.arc)
 
         print("MOVES LIST: ")
         print(moves_list)
@@ -225,7 +200,6 @@ class ForwardChecking(Backtracking):
         super().__init__()
         self.fc = True
         self.arc = False
-
 
 class ArcConsistency(Backtracking):
     def __init__(self):
