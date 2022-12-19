@@ -1,6 +1,24 @@
 pygame 2.1.2 (SDL 2.0.18, Python 3.8.0)
 Hello from the pygame community. https://www.pygame.org/contribute.html
 {'0h': ['0v', '1v'], '0v': ['0h', '2h', '4h'], '1v': ['0h'], '2h': ['0v'], '4h': ['0v', '5v'], '5v': ['4h']}
+FC
+ARC
+FC
+ARC
+FC
+ARC
+FC
+ARC
+FC
+ARC
+FC
+ARC
+FC
+ARC
+FC
+ARC
+FC
+ARC
 MOVES LIST: 
 [['0h', 0], ['0v', 0], ['1v', 0], ['2h', 0], ['4h', None], ['2h', None], ['1v', None], ['0v', 1], ['1v', 0], ['2h', 0], ['4h', 1], ['5v', 1]]
 INFO: Algorithm elapsed time is 0.000 seconds.

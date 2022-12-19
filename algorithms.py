@@ -1,5 +1,4 @@
-import copy
-
+# import copy
 
 class Algorithm:
     def get_algorithm_steps(self, tiles, variables, words):
@@ -28,12 +27,6 @@ class ExampleAlgorithm(Algorithm):
         print("SOLUTION")
         print(solution)
         return solution
-
-
-class Node:
-    def __init__(self, val, adj_list):
-        self.val = val
-        self.adj_list = adj_list
 
 
 class Graph:
@@ -123,6 +116,7 @@ def assign_var(graph, var, value):
         for i in range(0, value_len):
             graph.filled_tiles[ind + i * graph.m] = value[i]
 
+
 def unassign_var(graph, var, value_len):
     graph.unassigned_key(var)
     ind = int(var[0:-1])
@@ -132,6 +126,7 @@ def unassign_var(graph, var, value_len):
     else:
         for i in range(0, value_len):
             graph.filled_tiles[ind + i * graph.m] = ''
+
 
 def is_consistent_assignment(var, value, graph):
     ind = int(var[0:-1])
@@ -146,10 +141,10 @@ def is_consistent_assignment(var, value, graph):
             field = graph.filled_tiles[ind + i * graph.m]
             if field != '' and field != value[i]:
                 return False
-
     return True
 
-def backtrack_search(graph, moves_list, domains, level, fc=False):
+
+def backtrack_search(graph, moves_list, domains, level, fc, arc):
     if level == graph.key_count:
         return True
     var = graph.get_next_unassigned()
@@ -165,13 +160,17 @@ def backtrack_search(graph, moves_list, domains, level, fc=False):
             assign_var(graph, var, value)
 
             # if fc:
+            #     print("FC")
             #     new_dom = copy.deepcopy(domains)
             #     new_dom[var] = [value]
             #     for v in variables:
             #         if var != v and graph.are_constrained(var, v):
             #             update_domain(new_dom[var], v, value, graph)
 
-            if backtrack_search(graph, moves_list, domains, level + 1, fc):
+            if arc:
+                print("ARC")
+
+            if backtrack_search(graph, moves_list, domains, level + 1, fc, arc):
                 return True
 
     moves_list.append([var, None])
@@ -179,6 +178,9 @@ def backtrack_search(graph, moves_list, domains, level, fc=False):
     return False
 
 class Backtracking(Algorithm):
+    def __init__(self):
+        self.fc = False
+        self.arc = False
 
     def get_algorithm_steps(self, tiles, variables, words):
         graph = Graph(tiles, variables)
@@ -186,7 +188,7 @@ class Backtracking(Algorithm):
 
         moves_list = []
         domains = {var: [word for word in words if len(word) == variables[var]] for var in variables}
-        backtrack_search(graph, moves_list, domains, 0)
+        backtrack_search(graph, moves_list, domains, 0, self.fc, self.arc)
 
         print("MOVES LIST: ")
         print(moves_list)
@@ -196,24 +198,15 @@ class Backtracking(Algorithm):
         return solution
 
 
-class ForwardChecking(Algorithm):
-
-    def get_algorithm_steps(self, tiles, variables, words):
-        graph = Graph(tiles, variables)
-        graph.print_graph()
-
-        moves_list = []
-        domains = {var: [word for word in words if len(word) == variables[var]] for var in variables}
-        backtrack_search(graph, moves_list, domains, 0, True)
-
-        solution = []
-        for move in moves_list:
-            solution.append([move[0], move[1], domains])
-        return solution
+class ForwardChecking(Backtracking):
+    def __init__(self):
+        super().__init__()
+        self.fc = True
+        self.arc = False
 
 
-class ArcConsistency(Algorithm):
-
-    def get_algorithm_steps(self, tiles, variables, words):
-        solution = []
-        return solution
+class ArcConsistency(Backtracking):
+    def __init__(self):
+        super().__init__()
+        self.fc = True
+        self.arc = True
