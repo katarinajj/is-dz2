@@ -79,6 +79,13 @@ class Graph:
     def print_graph(self):
         print(self.graph)
 
+    def get_all_arcs(self):
+        all_arc = []
+        for a in self.graph:
+            for b in self.graph[a]:
+                all_arc.append((a, b))
+        return all_arc
+
 
 def get_next_unassigned(assignment):
     for key in assignment:
@@ -99,7 +106,6 @@ def form_filled_tiles(tiles):
             ind += 1
     return filled_tiles
 
-
 def assign_var(assignment, filled_tiles, var, value, m):
     assignment[var] = value
     ind = int(var[0:-1])
@@ -110,7 +116,6 @@ def assign_var(assignment, filled_tiles, var, value, m):
     else:
         for i in range(0, value_len):
             filled_tiles[ind + i * m] = value[i]
-
 
 def is_consistent_assignment(var, value, filled_tiles, m):
     ind = int(var[0:-1])
@@ -139,6 +144,48 @@ def update_domain(new_domains, value1, var1, var2, filled_tiles, m):
             new_domains_var2.append(value2)
     new_domains[var2] = new_domains_var2
 
+def satisfies_constraint(filled_tiles, var1, value1, var2, value2, m):
+    ind1 = int(var1[0:-1])
+    value_len1 = len(value1)
+    ind2 = int(var2[0:-1])
+    value_len2 = len(value2)
+
+    for i1 in range(0, value_len1):
+        next_ind1 = ind1 + i1 if var1[-1] == 'h' else ind1 + i1 * m
+        for i2 in range(0, value_len2):
+            next_ind2 = ind2 + i2 if var2[-1] == 'h' else ind2 + i2 * m
+
+            if next_ind1 == next_ind2 and value1[i1] != value2[i2]:
+                return False
+
+    return True
+
+
+def arc_consistency(graph, domains, filled_tiles):
+    all_arcs = graph.get_all_arcs()
+    while all_arcs:
+        x, y = all_arcs.pop(0)
+        x_vals_to_del = []
+        for val_x in domains[x]:
+            y_no_val = True
+
+            for val_y in domains[y]:
+                if satisfies_constraint(filled_tiles, x, val_x, y, val_y, graph.m):
+                    y_no_val = False
+                    break
+
+            if y_no_val:
+                x_vals_to_del.append(val_x)
+
+        if x_vals_to_del:
+            domains[x] = [val for val in domains[x] if val not in x_vals_to_del]
+            if not domains[x]:
+                return False
+
+            for z in graph.get_adj_list(x):
+                all_arcs.append((z, x))
+    return True
+
 
 def backtrack(graph, moves_list, domains, level, assignment, filled_tiles, fc, arc):
     if level == graph.key_count:
@@ -160,9 +207,16 @@ def backtrack(graph, moves_list, domains, level, assignment, filled_tiles, fc, a
             assign_var(new_assignment, new_filled_tiles, var, value, graph.m)
 
             if fc:
+                print("FC")
                 for v in graph.get_adj_list(var):
                     if new_assignment[v] is None:
-                        update_domain(new_domains, value, var, v, filled_tiles, graph.m)
+                        update_domain(new_domains, value, var, v, new_filled_tiles, graph.m) # works with filled_tiles
+
+            if arc: # samo za izmenjene domene proveravam
+                print("ARC")
+                if not arc_consistency(graph, new_domains, new_filled_tiles):
+                    new_assignment[var] = None
+                    continue
 
             if backtrack(graph, moves_list, new_domains, level + 1, new_assignment, new_filled_tiles, fc, arc):
                 return True
