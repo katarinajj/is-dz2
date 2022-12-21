@@ -87,7 +87,7 @@ class Graph:
         return all_arc
 
 
-graph = Graph([False], [])
+graph = Graph([[0]], [])
 
 def get_next_unassigned(assignment):
     for key in assignment:
@@ -107,7 +107,7 @@ def form_filled_tiles(tiles):
             ind += 1
     return filled_tiles
 
-def assign_var(assignment, filled_tiles, var, value, m):
+def assign_var(assignment, filled_tiles, var, value):
     assignment[var] = value
     ind = int(var[0:-1])
     value_len = len(value)
@@ -116,9 +116,9 @@ def assign_var(assignment, filled_tiles, var, value, m):
             filled_tiles[ind + i] = value[i]
     else:
         for i in range(0, value_len):
-            filled_tiles[ind + i * m] = value[i]
+            filled_tiles[ind + i * graph.m] = value[i]
 
-def is_consistent_assignment(var, value, filled_tiles, m):
+def is_consistent_assignment(var, value, filled_tiles):
     ind = int(var[0:-1])
     value_len = len(value)
     if var[-1] == 'h':
@@ -128,43 +128,43 @@ def is_consistent_assignment(var, value, filled_tiles, m):
                 return False
     else:
         for i in range(0, value_len):
-            field = filled_tiles[ind + i * m]
+            field = filled_tiles[ind + i * graph.m]
             if field != '' and field != value[i]:
                 return False
     return True
 
-def not_constraining(var1, value1, var2, value2, filled_tiles, m):
+def not_constraining(var1, value1, var2, value2, filled_tiles):
     # var1 = value1 is newly added in filled_tiles, so
     # it is enough to check if var2 = value 2 would constrain with filled_tiles
-    return is_consistent_assignment(var2, value2, filled_tiles, m)
+    return is_consistent_assignment(var2, value2, filled_tiles)
 
-def satisfies_constraint(filled_tiles, var1, value1, var2, value2, m):
+def satisfies_constraint(var1, value1, var2, value2):
     ind1 = int(var1[0:-1])
     value_len1 = len(value1)
     ind2 = int(var2[0:-1])
     value_len2 = len(value2)
 
     for i1 in range(0, value_len1):
-        next_ind1 = ind1 + i1 if var1[-1] == 'h' else ind1 + i1 * m
+        next_ind1 = ind1 + i1 if var1[-1] == 'h' else ind1 + i1 * graph.m
         for i2 in range(0, value_len2):
-            next_ind2 = ind2 + i2 if var2[-1] == 'h' else ind2 + i2 * m
+            next_ind2 = ind2 + i2 if var2[-1] == 'h' else ind2 + i2 * graph.m
 
             if next_ind1 == next_ind2 and value1[i1] != value2[i2]:
                 return False
 
     return True
 
-def update_domain(domains, value1, var1, var2, filled_tiles, m):
+def update_domain(domains, value1, var1, var2, filled_tiles):
     domains_var2 = []
     empty = True
     for value2 in domains[var2]:
-        if not_constraining(var1, value1, var2, value2, filled_tiles, m):
+        if not_constraining(var1, value1, var2, value2, filled_tiles):
             domains_var2.append(value2)
             empty = False
     domains[var2] = domains_var2
     return empty
 
-def arc_consistency(graph, domains, filled_tiles):
+def arc_consistency(domains):
     all_arcs = graph.get_all_arcs()
     while all_arcs:
         x, y = all_arcs.pop(0)
@@ -173,7 +173,7 @@ def arc_consistency(graph, domains, filled_tiles):
             y_no_val = True
 
             for val_y in domains[y]:
-                if satisfies_constraint(filled_tiles, x, val_x, y, val_y, graph.m):
+                if satisfies_constraint(x, val_x, y, val_y):
                     y_no_val = False
                     break
 
@@ -190,17 +190,20 @@ def arc_consistency(graph, domains, filled_tiles):
     return True
 
 
-def backtrack(graph, solution, domains, level, assignment, filled_tiles, fc, arc):
+def backtrack(solution, domains, level, assignment, filled_tiles, fc, arc):
     if level == graph.key_count:
         return True
     var = get_next_unassigned(assignment)
+    if var is None:
+        print("PROBLEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEM")
+        return False
 
     values = domains[var]
     len_values = len(values)
 
     for i in range(0, len_values):
         value = values[i]
-        if is_consistent_assignment(var, value, filled_tiles, graph.m):
+        if is_consistent_assignment(var, value, filled_tiles):
             solution.append([var, i, domains])
             print("var: " + str(var) + " i: " + str(i) + " value: " + value)
             new_assignment = copy.deepcopy(assignment)
@@ -208,7 +211,7 @@ def backtrack(graph, solution, domains, level, assignment, filled_tiles, fc, arc
             new_domains = copy.deepcopy(domains)
             new_domains[var] = [value]
 
-            assign_var(new_assignment, new_filled_tiles, var, value, graph.m)
+            assign_var(new_assignment, new_filled_tiles, var, value)
             print("var: " + str(var) + " new_assigment[var]: " + str(new_assignment[var]))
 
             if fc:
@@ -216,20 +219,20 @@ def backtrack(graph, solution, domains, level, assignment, filled_tiles, fc, arc
                 leaves_empty_domains = False
                 for v in graph.get_adj_list(var):
                     if new_assignment[v] is None:
-                        leaves_empty_domains = update_domain(new_domains, value, var, v, new_filled_tiles, graph.m)
+                        leaves_empty_domains = update_domain(new_domains, value, var, v, new_filled_tiles)
 
                 if leaves_empty_domains is True:
                     print("FC 2 ->" + var)
                     continue
 
-            if arc: # samo za izmenjene domene proveravam
+            if arc:  # samo za izmenjene domene proveravam
                 print("ARC")
-                if not arc_consistency(graph, new_domains, new_filled_tiles):
+                if not arc_consistency(new_domains):
                     continue
 
             print("FC 3 ->" + var + " level -> " + str(level))
 
-            if backtrack(graph, solution, new_domains, level + 1, new_assignment, new_filled_tiles, fc, arc):
+            if backtrack(solution, new_domains, level + 1, new_assignment, new_filled_tiles, fc, arc):
                 return True
 
     solution.append([var, None, domains])
@@ -242,6 +245,7 @@ class Backtracking(Algorithm):
         self.arc = False
 
     def get_algorithm_steps(self, tiles, variables, words):
+        global graph
         graph = Graph(tiles, variables)
         print("GRAPH: ")
         graph.print_graph()
@@ -251,7 +255,7 @@ class Backtracking(Algorithm):
         solution = []
         domains = {var: [word for word in words if len(word) == variables[var]] for var in variables}
 
-        backtrack(graph, solution, domains, 0, assignment, filled_tiles, self.fc, self.arc)
+        backtrack(solution, domains, 0, assignment, filled_tiles, self.fc, self.arc)
 
         # print("MOVES LIST: ")
         # print(moves_list)
