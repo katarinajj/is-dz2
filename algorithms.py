@@ -87,12 +87,13 @@ class Graph:
         return all_arc
 
 
+graph = Graph([False], [])
+
 def get_next_unassigned(assignment):
     for key in assignment:
         if assignment[key] is None:
             return key
     return None
-
 
 def form_filled_tiles(tiles):
     n = len(tiles)
@@ -137,13 +138,6 @@ def not_constraining(var1, value1, var2, value2, filled_tiles, m):
     # it is enough to check if var2 = value 2 would constrain with filled_tiles
     return is_consistent_assignment(var2, value2, filled_tiles, m)
 
-def update_domain(new_domains, value1, var1, var2, filled_tiles, m):
-    new_domains_var2 = []
-    for value2 in new_domains[var2]:
-        if not_constraining(var1, value1, var2, value2, filled_tiles, m):
-            new_domains_var2.append(value2)
-    new_domains[var2] = new_domains_var2
-
 def satisfies_constraint(filled_tiles, var1, value1, var2, value2, m):
     ind1 = int(var1[0:-1])
     value_len1 = len(value1)
@@ -160,6 +154,15 @@ def satisfies_constraint(filled_tiles, var1, value1, var2, value2, m):
 
     return True
 
+def update_domain(domains, value1, var1, var2, filled_tiles, m):
+    domains_var2 = []
+    empty = True
+    for value2 in domains[var2]:
+        if not_constraining(var1, value1, var2, value2, filled_tiles, m):
+            domains_var2.append(value2)
+            empty = False
+    domains[var2] = domains_var2
+    return empty
 
 def arc_consistency(graph, domains, filled_tiles):
     all_arcs = graph.get_all_arcs()
@@ -187,7 +190,7 @@ def arc_consistency(graph, domains, filled_tiles):
     return True
 
 
-def backtrack(graph, moves_list, domains, level, assignment, filled_tiles, fc, arc):
+def backtrack(graph, solution, domains, level, assignment, filled_tiles, fc, arc):
     if level == graph.key_count:
         return True
     var = get_next_unassigned(assignment)
@@ -198,30 +201,39 @@ def backtrack(graph, moves_list, domains, level, assignment, filled_tiles, fc, a
     for i in range(0, len_values):
         value = values[i]
         if is_consistent_assignment(var, value, filled_tiles, graph.m):
-            moves_list.append([var, i])
+            solution.append([var, i, domains])
+            print("var: " + str(var) + " i: " + str(i) + " value: " + value)
             new_assignment = copy.deepcopy(assignment)
             new_filled_tiles = copy.deepcopy(filled_tiles)
             new_domains = copy.deepcopy(domains)
             new_domains[var] = [value]
 
             assign_var(new_assignment, new_filled_tiles, var, value, graph.m)
+            print("var: " + str(var) + " new_assigment[var]: " + str(new_assignment[var]))
 
             if fc:
-                print("FC")
+                print("FC -> " + var)
+                leaves_empty_domains = False
                 for v in graph.get_adj_list(var):
                     if new_assignment[v] is None:
-                        update_domain(new_domains, value, var, v, new_filled_tiles, graph.m) # works with filled_tiles
+                        leaves_empty_domains = update_domain(new_domains, value, var, v, new_filled_tiles, graph.m)
+
+                if leaves_empty_domains is True:
+                    print("FC 2 ->" + var)
+                    continue
 
             if arc: # samo za izmenjene domene proveravam
                 print("ARC")
                 if not arc_consistency(graph, new_domains, new_filled_tiles):
-                    new_assignment[var] = None
                     continue
 
-            if backtrack(graph, moves_list, new_domains, level + 1, new_assignment, new_filled_tiles, fc, arc):
+            print("FC 3 ->" + var + " level -> " + str(level))
+
+            if backtrack(graph, solution, new_domains, level + 1, new_assignment, new_filled_tiles, fc, arc):
                 return True
 
-    moves_list.append([var, None])
+    solution.append([var, None, domains])
+    assignment[var] = None
     return False
 
 class Backtracking(Algorithm):
@@ -236,16 +248,19 @@ class Backtracking(Algorithm):
 
         assignment = {key: None for key in variables}
         filled_tiles = form_filled_tiles(tiles)
-        moves_list = []
+        solution = []
         domains = {var: [word for word in words if len(word) == variables[var]] for var in variables}
 
-        backtrack(graph, moves_list, domains, 0, assignment, filled_tiles, self.fc, self.arc)
+        backtrack(graph, solution, domains, 0, assignment, filled_tiles, self.fc, self.arc)
 
-        print("MOVES LIST: ")
-        print(moves_list)
-        solution = []
-        for move in moves_list:
-            solution.append([move[0], move[1], domains])
+        # print("MOVES LIST: ")
+        # print(moves_list)
+        # solution = []
+        # for move in moves_list:
+        #     solution.append([move[0], move[1], domains])
+
+        print("SOLUTION")
+        print(solution)
         return solution
 
 
