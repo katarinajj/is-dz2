@@ -1,35 +1,25 @@
 pygame 2.1.2 (SDL 2.0.18, Python 3.8.0)
 Hello from the pygame community. https://www.pygame.org/contribute.html
-GRAPH: 
+GRAPH:
 {'0h': ['0v', '1v'], '0v': ['0h', '2h', '4h'], '1v': ['0h'], '2h': ['0v'], '4h': ['0v', '5v'], '5v': ['4h']}
 var: 0h i: 0 value: ja
-var: 0h new_assigment[var]: ja
-FC -> 0h
-FC 3 ->0h level -> 0
-var: 0v i: 0 value: jad
-var: 0v new_assigment[var]: jad
-FC -> 0v
-FC 2 ->0v
-var: 0v i: 1 value: jak
-var: 0v new_assigment[var]: jak
-FC -> 0v
-FC 3 ->0v level -> 1
+FC
+ARC
+var: 0v i: 0 value: jak
+FC
+ARC
 var: 1v i: 0 value: a
-var: 1v new_assigment[var]: a
-FC -> 1v
-FC 3 ->1v level -> 2
+FC
+ARC
 var: 2h i: 0 value: a
-var: 2h new_assigment[var]: a
-FC -> 2h
-FC 3 ->2h level -> 3
+FC
+ARC
 var: 4h i: 0 value: ko
-var: 4h new_assigment[var]: ko
-FC -> 4h
-FC 3 ->4h level -> 4
+FC
+ARC
 var: 5v i: 0 value: o
-var: 5v new_assigment[var]: o
-FC -> 5v
-FC 3 ->5v level -> 5
-SOLUTION
-[['0h', 0, {'0h': ['ja', 'ko'], '0v': ['jad', 'jak'], '1v': ['a', 'o'], '2h': ['a', 'o'], '4h': ['ja', 'ko'], '5v': ['a', 'o']}], ['0v', 0, {'0h': ['ja'], '0v': ['jad', 'jak'], '1v': ['a'], '2h': ['a', 'o'], '4h': ['ja', 'ko'], '5v': ['a', 'o']}], ['0v', 1, {'0h': ['ja'], '0v': ['jad', 'jak'], '1v': ['a'], '2h': ['a', 'o'], '4h': ['ja', 'ko'], '5v': ['a', 'o']}], ['1v', 0, {'0h': ['ja'], '0v': ['jak'], '1v': ['a'], '2h': ['a'], '4h': ['ko'], '5v': ['a', 'o']}], ['2h', 0, {'0h': ['ja'], '0v': ['jak'], '1v': ['a'], '2h': ['a'], '4h': ['ko'], '5v': ['a', 'o']}], ['4h', 0, {'0h': ['ja'], '0v': ['jak'], '1v': ['a'], '2h': ['a'], '4h': ['ko'], '5v': ['a', 'o']}], ['5v', 0, {'0h': ['ja'], '0v': ['jak'], '1v': ['a'], '2h': ['a'], '4h': ['ko'], '5v': ['o']}]]
-INFO: Algorithm elapsed time is 0.002 seconds.
+FC
+ARC
+SOLUTION:
+[['0h', 0, {'0h': ['ja', 'ko'], '0v': ['jad', 'jak'], '1v': ['a', 'o'], '2h': ['a', 'o'], '4h': ['ja', 'ko'], '5v': ['a', 'o']}], ['0v', 0, {'0h': ['ja'], '0v': ['jak'], '1v': ['a'], '2h': ['a'], '4h': ['ko'], '5v': ['o']}], ['1v', 0, {'0h': ['ja'], '0v': ['jak'], '1v': ['a'], '2h': ['a'], '4h': ['ko'], '5v': ['o']}], ['2h', 0, {'0h': ['ja'], '0v': ['jak'], '1v': ['a'], '2h': ['a'], '4h': ['ko'], '5v': ['o']}], ['4h', 0, {'0h': ['ja'], '0v': ['jak'], '1v': ['a'], '2h': ['a'], '4h': ['ko'], '5v': ['o']}], ['5v', 0, {'0h': ['ja'], '0v': ['jak'], '1v': ['a'], '2h': ['a'], '4h': ['ko'], '5v': ['o']}]]
+INFO: Algorithm elapsed time is 0.001 seconds.

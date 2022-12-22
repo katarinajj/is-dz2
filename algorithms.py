@@ -135,7 +135,7 @@ def is_consistent_assignment(var, value, filled_tiles):
 
 def not_constraining(var1, value1, var2, value2, filled_tiles):
     # var1 = value1 is newly added in filled_tiles, so
-    # it is enough to check if var2 = value 2 would constrain with filled_tiles
+    # it is enough to check if var2 = value 2 is consistent with filled_tiles
     return is_consistent_assignment(var2, value2, filled_tiles)
 
 def satisfies_constraint(var1, value1, var2, value2):
@@ -154,39 +154,69 @@ def satisfies_constraint(var1, value1, var2, value2):
 
     return True
 
-def update_domain(domains, value1, var1, var2, filled_tiles):
-    domains_var2 = []
+def update_domain_check_empty(domains, value1, var1, var2, filled_tiles):
+    new_domain_var2 = []
     empty = True
+    updated = False
     for value2 in domains[var2]:
-        if not_constraining(var1, value1, var2, value2, filled_tiles):
-            domains_var2.append(value2)
+        ret1 = not_constraining(var1, value1, var2, value2, filled_tiles)
+        ret2 = satisfies_constraint(var1, value1, var2, value2)
+        if ret1 != ret2:
+            print("LOSEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+
+        if satisfies_constraint(var1, value1, var2, value2):
+            new_domain_var2.append(value2)
             empty = False
-    domains[var2] = domains_var2
-    return empty
+        else:
+            updated = True
+    domains[var2] = new_domain_var2
+    return empty, updated
 
 def arc_consistency(domains):
     all_arcs = graph.get_all_arcs()
     while all_arcs:
         x, y = all_arcs.pop(0)
-        x_vals_to_del = []
-        for val_x in domains[x]:
-            y_no_val = True
-
-            for val_y in domains[y]:
-                if satisfies_constraint(x, val_x, y, val_y):
-                    y_no_val = False
+        new_domain_x = []
+        for value_x in domains[x]:
+            y_satisfying_value = False
+            for value_y in domains[y]:
+                if satisfies_constraint(x, value_x, y, value_y):
+                    y_satisfying_value = True
                     break
+            if y_satisfying_value is True:
+                new_domain_x.append(value_x)
 
-            if y_no_val:
-                x_vals_to_del.append(val_x)
-
-        if x_vals_to_del:
-            domains[x] = [val for val in domains[x] if val not in x_vals_to_del]
-            if not domains[x]:
+        if len(domains[x]) - len(new_domain_x) > 0:
+            if len(new_domain_x) == 0:
                 return False
+            domains[x] = new_domain_x
 
             for z in graph.get_adj_list(x):
                 all_arcs.append((z, x))
+
+    return True
+
+def arc_consistency2(domains, queue):
+    while queue:
+        y = queue.pop(0)
+        for x in graph.get_adj_list(y):  # x -> y
+            new_domain_x = []
+            for value_x in domains[x]:
+                y_satisfying_value = False
+                for value_y in domains[y]:
+                    if satisfies_constraint(x, value_x, y, value_y):
+                        y_satisfying_value = True
+                        break
+                if y_satisfying_value is True:
+                    new_domain_x.append(value_x)
+
+            if len(domains[x]) - len(new_domain_x) > 0:  # has values to be deleted
+                if len(new_domain_x) == 0:
+                    return False
+                domains[x] = new_domain_x
+
+                queue.append(x)
+
     return True
 
 
@@ -212,25 +242,26 @@ def backtrack(solution, domains, level, assignment, filled_tiles, fc, arc):
             new_domains[var] = [value]
 
             assign_var(new_assignment, new_filled_tiles, var, value)
-            print("var: " + str(var) + " new_assigment[var]: " + str(new_assignment[var]))
-
+            queue = []
             if fc:
-                print("FC -> " + var)
-                leaves_empty_domains = False
+                should_continue = False
                 for v in graph.get_adj_list(var):
                     if new_assignment[v] is None:
-                        leaves_empty_domains = update_domain(new_domains, value, var, v, new_filled_tiles)
+                        empty, updated = update_domain_check_empty(new_domains, value, var, v, new_filled_tiles)
+                        if empty is True:
+                            should_continue = True
+                            break
+                        # for arc2
+                        if arc and updated:
+                            queue.append(var)
 
-                if leaves_empty_domains is True:
-                    print("FC 2 ->" + var)
+                if should_continue is True:
                     continue
 
-            if arc:  # samo za izmenjene domene proveravam
-                print("ARC")
+            if arc:
                 if not arc_consistency(new_domains):
                     continue
-
-            print("FC 3 ->" + var + " level -> " + str(level))
+                # if not arc_consistency2(new_domains, queue):
 
             if backtrack(solution, new_domains, level + 1, new_assignment, new_filled_tiles, fc, arc):
                 return True
@@ -247,7 +278,7 @@ class Backtracking(Algorithm):
     def get_algorithm_steps(self, tiles, variables, words):
         global graph
         graph = Graph(tiles, variables)
-        print("GRAPH: ")
+        print("GRAPH:")
         graph.print_graph()
 
         assignment = {key: None for key in variables}
@@ -257,13 +288,7 @@ class Backtracking(Algorithm):
 
         backtrack(solution, domains, 0, assignment, filled_tiles, self.fc, self.arc)
 
-        # print("MOVES LIST: ")
-        # print(moves_list)
-        # solution = []
-        # for move in moves_list:
-        #     solution.append([move[0], move[1], domains])
-
-        print("SOLUTION")
+        print("SOLUTION:")
         print(solution)
         return solution
 
