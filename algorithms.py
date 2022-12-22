@@ -11,10 +11,9 @@ class ExampleAlgorithm(Algorithm):
         print("TILES")
         for x in tiles:
             print(x)
-        print("VARIABLES")
         print(variables)
-        print("WORDS")
-        print(words)
+        print(f'{variables=}')
+        print(f'{words=}')
         moves_list = [['0h', 0], ['0v', 2], ['1v', 1], ['2h', 1], ['4h', None],
                       ['2h', None], ['1v', None], ['0v', 3], ['1v', 1], ['2h', 1],
                       ['4h', 4], ['5v', 5]]
@@ -22,10 +21,8 @@ class ExampleAlgorithm(Algorithm):
         solution = []
         for move in moves_list:
             solution.append([move[0], move[1], domains])
-        print("DOMAINS")
-        print(domains)
-        print("SOLUTION")
-        print(solution)
+        print(f'{domains=}')
+        print(f'{solution=}')
         return solution
 
 
@@ -162,7 +159,7 @@ def update_domain_check_empty(domains, value1, var1, var2, filled_tiles):
         ret1 = not_constraining(var1, value1, var2, value2, filled_tiles)
         ret2 = satisfies_constraint(var1, value1, var2, value2)
         if ret1 != ret2:
-            print("LOSEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE")
+            print("Funcstions should return the same value")
 
         if satisfies_constraint(var1, value1, var2, value2):
             new_domain_var2.append(value2)
@@ -175,7 +172,7 @@ def update_domain_check_empty(domains, value1, var1, var2, filled_tiles):
 def arc_consistency(domains):
     all_arcs = graph.get_all_arcs()
     while all_arcs:
-        x, y = all_arcs.pop(0)
+        x, y = all_arcs.pop(0) # x -> y
         new_domain_x = []
         for value_x in domains[x]:
             y_satisfying_value = False
@@ -191,7 +188,7 @@ def arc_consistency(domains):
                 return False
             domains[x] = new_domain_x
 
-            for z in graph.get_adj_list(x):
+            for z in graph.get_adj_list(x): # z -> x
                 all_arcs.append((z, x))
 
     return True
@@ -225,7 +222,7 @@ def backtrack(solution, domains, level, assignment, filled_tiles, fc, arc):
         return True
     var = get_next_unassigned(assignment)
     if var is None:
-        print("PROBLEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEM")
+        print("There is no next var but the algorithm did not stop")
         return False
 
     values = domains[var]
@@ -289,7 +286,7 @@ class Backtracking(Algorithm):
         backtrack(solution, domains, 0, assignment, filled_tiles, self.fc, self.arc)
 
         print("SOLUTION:")
-        print(solution)
+        print(f'{solution=}')
         return solution
 
 
