@@ -74,6 +74,7 @@ class Graph:
                 cnt += 1
 
     def print_graph(self):
+        print("GRAPH")
         print(self.graph)
 
     def get_all_arcs(self):
@@ -85,6 +86,7 @@ class Graph:
 
 
 graph = Graph([[0]], [])
+sorted_keys = []
 
 def get_next_unassigned(assignment):
     for key in assignment:
@@ -172,7 +174,7 @@ def update_domain_check_empty(domains, value1, var1, var2, filled_tiles):
 def arc_consistency(domains):
     all_arcs = graph.get_all_arcs()
     while all_arcs:
-        x, y = all_arcs.pop(0) # x -> y
+        x, y = all_arcs.pop(0)  # x -> y
         new_domain_x = []
         for value_x in domains[x]:
             y_satisfying_value = False
@@ -188,7 +190,7 @@ def arc_consistency(domains):
                 return False
             domains[x] = new_domain_x
 
-            for z in graph.get_adj_list(x): # z -> x
+            for z in graph.get_adj_list(x):  # z -> x
                 all_arcs.append((z, x))
 
     return True
@@ -220,7 +222,8 @@ def arc_consistency2(domains, queue):
 def backtrack(solution, domains, level, assignment, filled_tiles, fc, arc):
     if level == graph.key_count:
         return True
-    var = get_next_unassigned(assignment)
+    # var = get_next_unassigned(assignment)
+    var = sorted_keys[level]
     if var is None:
         print("There is no next var but the algorithm did not stop")
         return False
@@ -232,7 +235,7 @@ def backtrack(solution, domains, level, assignment, filled_tiles, fc, arc):
         value = values[i]
         if is_consistent_assignment(var, value, filled_tiles):
             solution.append([var, i, domains])
-            print("var: " + str(var) + " i: " + str(i) + " value: " + value)
+            # print("var: " + str(var) + " i: " + str(i) + " value: " + value)
             new_assignment = copy.deepcopy(assignment)
             new_filled_tiles = copy.deepcopy(filled_tiles)
             new_domains = copy.deepcopy(domains)
@@ -256,9 +259,8 @@ def backtrack(solution, domains, level, assignment, filled_tiles, fc, arc):
                     continue
 
             if arc:
-                if not arc_consistency(new_domains):
+                if not arc_consistency2(new_domains, queue):
                     continue
-                # if not arc_consistency2(new_domains, queue):
 
             if backtrack(solution, new_domains, level + 1, new_assignment, new_filled_tiles, fc, arc):
                 return True
@@ -275,17 +277,23 @@ class Backtracking(Algorithm):
     def get_algorithm_steps(self, tiles, variables, words):
         global graph
         graph = Graph(tiles, variables)
-        print("GRAPH:")
         graph.print_graph()
+
+        keys = [key for key in variables]
+        global sorted_keys
+        sorted_keys = sorted(keys, key=lambda x: (int(x[0:-1]), x[-1]))
+        print(f'{sorted_keys=}')
 
         assignment = {key: None for key in variables}
         filled_tiles = form_filled_tiles(tiles)
         solution = []
         domains = {var: [word for word in words if len(word) == variables[var]] for var in variables}
 
+        if self.arc:
+            arc_consistency(domains)
+
         backtrack(solution, domains, 0, assignment, filled_tiles, self.fc, self.arc)
 
-        print("SOLUTION:")
         print(f'{solution=}')
         return solution
 
