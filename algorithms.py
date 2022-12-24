@@ -158,12 +158,8 @@ def update_domain_check_empty(domains, value1, var1, var2, filled_tiles):
     empty = True
     updated = False
     for value2 in domains[var2]:
-        ret1 = not_constraining(var1, value1, var2, value2, filled_tiles)
-        ret2 = satisfies_constraint(var1, value1, var2, value2)
-        if ret1 != ret2:
-            print("Funcstions should return the same value")
-
-        if satisfies_constraint(var1, value1, var2, value2):
+        # ret2 = satisfies_constraint(var1, value1, var2, value2)
+        if not_constraining(var1, value1, var2, value2, filled_tiles):
             new_domain_var2.append(value2)
             empty = False
         else:
