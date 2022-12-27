@@ -25,57 +25,53 @@ class ExampleAlgorithm(Algorithm):
         print(f'{solution=}')
         return solution
 
+sorted_keys = []
 
 class Graph:
     def __init__(self, tiles, variables):
         self.n = len(tiles)
         self.m = len(tiles[0])
         self.graph = {}
-        self.key_count = len(variables)
-        for key in variables:
+        self.key_count = len(sorted_keys)
+        for key in sorted_keys:
             self.graph[key] = set()
 
-        self.form_constraints(tiles, variables)
-        for key in variables:
-            self.graph[key] = sorted(self.graph[key])
+        self.form_constraints(variables)
+        for key in sorted_keys:
+            self.graph[key] = sorted(self.graph[key], key=lambda x: (int(x[0:-1]), x[-1]))
 
     def get_adj_list(self, key):
         return self.graph[key]
 
-    def edge(self, a, b):
+    def form_edge(self, a, b):
         if a != b:
             self.graph[a].add(b)
             self.graph[b].add(a)
 
-    def form_key_edges(self, key, cnt, variables):
-        key_h = str(cnt) + 'h'
-        if key_h in variables:
-            self.edge(key, key_h)
-        key_v = str(cnt) + 'v'
-        if key_v in variables:
-            self.edge(key, key_v)
+    def have_colision(self, variables, key1, key2):
+        ind1 = int(key1[0:-1])
+        ind2 = int(key2[0:-1])
+        for i1 in range(0, variables[key1]):
+            next_ind1 = ind1 + i1 if key1[-1] == 'h' else ind1 + i1 * self.m
+            for i2 in range(0, variables[key2]):
+                next_ind2 = ind2 + i2 if key2[-1] == 'h' else ind2 + i2 * self.m
 
-    def form_constraints(self, tiles, variables):
-        cnt = 0
-        n = len(tiles)
-        m = len(tiles[0])
-        for i in range(0, n):
-            for j in range(0, m):
-                key = str(cnt) + 'h'
-                if key in variables:
-                    for col in range(j, j + variables[key]):
-                        self.form_key_edges(key, i * m + col, variables)
+                if next_ind1 == next_ind2:
+                    return True
 
-                key = str(cnt) + 'v'
-                if key in variables:
-                    for row in range(i, i + variables[key]):
-                        self.form_key_edges(key, row * m + j, variables)
+        return False
 
-                cnt += 1
+    def form_constraints(self, variables):
+        for i in range(0, self.key_count - 1):
+            for j in range(i, self.key_count):
+                key1 = sorted_keys[i]
+                key2 = sorted_keys[j]
+
+                if self.have_colision(variables, key1, key2) is True:
+                    self.form_edge(key1, key2)
 
     def print_graph(self):
-        print("GRAPH")
-        print(self.graph)
+        print(f'{self.graph=}')
 
     def get_all_arcs(self):
         all_arc = []
@@ -86,7 +82,6 @@ class Graph:
 
 
 graph = Graph([[0]], [])
-sorted_keys = []
 
 def get_next_unassigned(assignment):
     for key in assignment:
@@ -220,9 +215,6 @@ def backtrack(solution, domains, level, assignment, filled_tiles, fc, arc):
         return True
     # var = get_next_unassigned(assignment)
     var = sorted_keys[level]
-    if var is None:
-        print("There is no next var but the algorithm did not stop")
-        return False
 
     values = domains[var]
     len_values = len(values)
@@ -231,7 +223,7 @@ def backtrack(solution, domains, level, assignment, filled_tiles, fc, arc):
         value = values[i]
         if is_consistent_assignment(var, value, filled_tiles):
             solution.append([var, i, domains])
-            # print("var: " + str(var) + " i: " + str(i) + " value: " + value)
+            print("var: " + str(var) + " i: " + str(i) + " value: " + value)
             new_assignment = copy.deepcopy(assignment)
             new_filled_tiles = copy.deepcopy(filled_tiles)
             new_domains = copy.deepcopy(domains)
@@ -271,16 +263,16 @@ class Backtracking(Algorithm):
         self.arc = False
 
     def get_algorithm_steps(self, tiles, variables, words):
+        keys = [key for key in variables]
+        global sorted_keys
+        sorted_keys = sorted(keys, key=lambda x: (int(x[0:-1]), x[-1]))
+        # print(f'{sorted_keys=}')
+
         global graph
         graph = Graph(tiles, variables)
         graph.print_graph()
 
-        keys = [key for key in variables]
-        global sorted_keys
-        sorted_keys = sorted(keys, key=lambda x: (int(x[0:-1]), x[-1]))
-        print(f'{sorted_keys=}')
-
-        assignment = {key: None for key in variables}
+        assignment = {key: None for key in sorted_keys}
         filled_tiles = form_filled_tiles(tiles)
         solution = []
         domains = {var: [word for word in words if len(word) == variables[var]] for var in variables}
@@ -305,3 +297,4 @@ class ArcConsistency(Backtracking):
         super().__init__()
         self.fc = True
         self.arc = True
+# python .\main.py schemas\schema0.txt words\words0.txt ArcConsistency > out.txt
